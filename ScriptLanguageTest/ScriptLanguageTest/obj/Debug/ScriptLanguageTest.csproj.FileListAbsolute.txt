@@ -1,0 +1,7 @@
+c:\users\wth\documents\visual studio 2013\Projects\ScriptLanguageTest\ScriptLanguageTest\bin\Debug\ScriptLanguageTest.exe.config
+F:\gitHub\ScriptLanguageTest\ScriptLanguageTest\ScriptLanguageTest\ScriptLanguageTest\bin\Debug\ScriptLanguageTest.exe.config
+F:\gitHub\ScriptLanguageTest\ScriptLanguageTest\ScriptLanguageTest\ScriptLanguageTest\obj\Debug\ScriptLanguageTest.csprojResolveAssemblyReference.cache
+F:\gitHub\ScriptLanguageTest\ScriptLanguageTest\ScriptLanguageTest\ScriptLanguageTest\bin\Debug\ScriptLanguageTest.exe
+F:\gitHub\ScriptLanguageTest\ScriptLanguageTest\ScriptLanguageTest\ScriptLanguageTest\bin\Debug\ScriptLanguageTest.pdb
+F:\gitHub\ScriptLanguageTest\ScriptLanguageTest\ScriptLanguageTest\ScriptLanguageTest\obj\Debug\ScriptLanguageTest.exe
+F:\gitHub\ScriptLanguageTest\ScriptLanguageTest\ScriptLanguageTest\ScriptLanguageTest\obj\Debug\ScriptLanguageTest.pdb
