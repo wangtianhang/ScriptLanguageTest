@@ -10,6 +10,11 @@ class PredicateBase
     {
         return true;
     }
+
+    public virtual string GetPredicate()
+    {
+        return "";
+    }
 }
 
 /// <summary>
@@ -19,7 +24,13 @@ class DummyPredicateA : PredicateBase
 {
     public override bool IsTrue()
     {
+        Console.WriteLine("a");
         return true;
+    }
+
+    public override string GetPredicate()
+    {
+        return "a";
     }
 }
 
@@ -27,7 +38,13 @@ class DummyPredicateB : PredicateBase
 {
     public override bool IsTrue()
     {
+        Console.WriteLine("b");
         return true;
+    }
+
+    public override string GetPredicate()
+    {
+        return "b";
     }
 }
 
@@ -35,7 +52,13 @@ class DummyPredicateC : PredicateBase
 {
     public override bool IsTrue()
     {
+        Console.WriteLine("c");
         return true;
+    }
+
+    public override string GetPredicate()
+    {
+        return "c";
     }
 }
 
@@ -47,7 +70,7 @@ class AndNode : PredicateBase
     /// <summary>
     /// 参考c语言优先级
     /// </summary>
-    public const int m_OperatorPriority = 11;
+    //public const int m_OperatorPriority = 11;
 
     public void Init(PredicateBase predicate1, PredicateBase predicate2)
     {
@@ -57,7 +80,13 @@ class AndNode : PredicateBase
 
     public override bool IsTrue()
     {
+        Console.WriteLine("&");
         return m_predicate1.IsTrue() && m_predicate2.IsTrue();
+    }
+
+    public override string GetPredicate()
+    {
+        return "(" + m_predicate1.GetPredicate() + "&" + m_predicate2.GetPredicate() + ")";
     }
 
     PredicateBase m_predicate1 = null;
@@ -72,7 +101,7 @@ class OrNode : PredicateBase
     /// <summary>
     /// 参考c语言优先级
     /// </summary>
-    public const int m_OperatorPriority = 12;
+    //public const int m_OperatorPriority = 12;
 
     public void Init(PredicateBase predicate1, PredicateBase predicate2)
     {
@@ -82,7 +111,13 @@ class OrNode : PredicateBase
 
     public override bool IsTrue()
     {
+        Console.WriteLine("|");
         return m_predicate1.IsTrue() || m_predicate2.IsTrue();
+    }
+
+    public override string GetPredicate()
+    {
+        return "(" + m_predicate1.GetPredicate() + "|" + m_predicate2.GetPredicate() + ")";
     }
 
     PredicateBase m_predicate1 = null;
@@ -97,7 +132,7 @@ class NotNode : PredicateBase
     /// <summary>
     /// 参考c语言优先级
     /// </summary>
-    public const int m_OperatorPriority = 2;
+    //public const int m_OperatorPriority = 2;
 
     public void Init(PredicateBase predicate)
     {
@@ -106,15 +141,39 @@ class NotNode : PredicateBase
 
     public override bool IsTrue()
     {
+        Console.WriteLine("!");
         return !m_predicate.IsTrue();
+    }
+
+    public override string GetPredicate()
+    {
+        return "(!"  + m_predicate.GetPredicate() +  ")";
     }
 
     PredicateBase m_predicate = null;
 }
 
+public enum TokenType
+{
+    None,
+    Operand, // 操作数
+    Operator, // 操作符
+}
+
+class Token
+{
+    public Token(TokenType type, string token)
+    {
+        m_type = type;
+        m_token = token;
+    }
+    public TokenType m_type = TokenType.None;
+    public string m_token = "";
+}
+
 class Parser
 {
-    PredicateBase m_predicate = null;
+    //PredicateBase m_predicate = null;
     /// <summary>
     /// 操作数堆栈
     /// </summary>
@@ -122,7 +181,7 @@ class Parser
     /// <summary>
     /// 操作符堆栈
     /// </summary>
-    Stack<PredicateBase> m_operatorStack = new Stack<PredicateBase>();
+    Stack<Token> m_operatorStack = new Stack<Token>();
 
     //string m_param = null;
     List<Char> m_param = new List<char>();
@@ -139,17 +198,132 @@ class Parser
 
         while(m_param.Count > 0)
         {
-            string token = GetToken();
-            Console.WriteLine("token " + token);
+            Token token = GetToken();
+            Console.WriteLine("token " + token.m_token + " " + token.m_type);
+            if(token.m_type == TokenType.Operand)
+            {
+                PredicateBase predicate = CreatePredicate(token.m_token);
+                if (m_operatorStack.Count > 0
+                    && m_operatorStack.Peek().m_token == "!")
+                {
+                    NotNode notNode = new NotNode();
+                    notNode.Init(predicate);
+                    m_operandStack.Push(predicate);
+                    m_operatorStack.Pop();
+                }
+                else
+                {
+                    m_operandStack.Push(predicate);
+                }
+            }
+            else if (token.m_type == TokenType.Operator)
+            {
+                if (token.m_token == "!")
+                {
+                    //PredicateBase predicate = m_operandStack.Pop();
+                    //NotNode notNode = new NotNode();
+                    //notNode.Init(predicate);
+                    //m_operandStack.Push(predicate);
+                    m_operatorStack.Push(token);
+                }
+                else if (token.m_token == "&"
+                    || token.m_token == "|")
+                {
+                    if(m_operatorStack.Count > 0)
+                    {
+                        if (GetPriority(m_operatorStack.Peek().m_token) < GetPriority(token.m_token))
+                        {
+                            HandleStackTopOperator();
+                            m_operatorStack.Push(token);
+                        }
+                        else
+                        {
+                            m_operatorStack.Push(token);
+                        }
+                    }
+                    else
+                    {
+                        m_operatorStack.Push(token);
+                    }
+                }
+                else if(token.m_token == "(")
+                {
+                    m_operatorStack.Push(token);
+                }
+                else if (token.m_token == ")")
+                {
+                    Token cacheOperator = m_operatorStack.Peek();
+                    while (cacheOperator.m_token != "(")
+                    {
+                        HandleStackTopOperator();
+                    }
+
+                    m_operatorStack.Pop();
+                }
+            }
+        }
+
+        if (m_operatorStack.Count != 0)
+        {
+            HandleStackTopOperator();
+        }
+    }
+
+    void HandleStackTopOperator()
+    {
+        Token cacheOperator = m_operatorStack.Pop();
+        PredicateBase predicate1 = m_operandStack.Pop();
+        PredicateBase predicate2 = m_operandStack.Pop();
+
+        if (cacheOperator.m_token == "&")
+        {
+            AndNode andNode = new AndNode();
+            andNode.Init(predicate1, predicate2);
+            m_operandStack.Push(andNode);
+        }
+        else if (cacheOperator.m_token == "|")
+        {
+            OrNode orNode = new OrNode();
+            orNode.Init(predicate1, predicate2);
+            m_operandStack.Push(orNode);
         }
     }
 
     public bool Eval()
     {
-        return m_predicate.IsTrue();
+        if (m_operandStack.Count == 1)
+        {
+            PredicateBase predicate = m_operandStack.Peek();
+            Console.WriteLine(predicate.GetPredicate());
+            return predicate.IsTrue();
+        }
+        else
+        {
+            throw new Exception("操作数堆栈数量大于1");
+        }
     }
 
-    string GetToken()
+    int GetPriority(string operatorWord)
+    {
+        if(operatorWord == "&")
+        {
+            return 11;
+        }
+        else if(operatorWord == "|")
+        {
+            return 12;
+        }
+        else if (operatorWord == "!")
+        {
+            return 2;
+        }
+        else
+        {
+            return 99;
+        }
+    }
+
+    Token GetToken()
     {
         if(m_param.Count == 0)
         {
@@ -160,7 +334,7 @@ class Parser
         {
             char token = m_param[0];
             m_param.RemoveAt(0);
-            return token.ToString();
+            return new Token(TokenType.Operator, token.ToString());
         }
         else
         {
@@ -183,7 +357,7 @@ class Parser
                     }
                 }
 
-                return token;
+                return new Token(TokenType.Operand, token);
             }
             else
             {
@@ -214,17 +388,17 @@ class Parser
                 || (oneChar >= 'a' && oneChar <= 'z');
     }
 
-    public static PredicateBase CreatePredicate(string type)
+    public static PredicateBase CreatePredicate(string token)
     {
-        if (type == "a")
+        if (token == "a")
         {
             return new DummyPredicateA();
         }
-        else if(type == "b")
+        else if (token == "b")
         {
             return new DummyPredicateB();
         }
-        else if(type == "c")
+        else if (token == "c")
         {
             return new DummyPredicateC();
         }
@@ -240,7 +414,7 @@ class Program
     static void Main(string[] args)
     {
         Parser parser = new Parser("!a & (b | c)");
-        //Console.WriteLine("eval " + parser.Eval());
+        Console.WriteLine("eval " + parser.Eval());
         Console.WriteLine("end");
         Console.ReadLine();
     }
