@@ -208,7 +208,7 @@ class Parser
                 {
                     NotNode notNode = new NotNode();
                     notNode.Init(predicate);
-                    m_operandStack.Push(predicate);
+                    m_operandStack.Push(notNode);
                     m_operatorStack.Pop();
                 }
                 else
@@ -256,6 +256,7 @@ class Parser
                     while (cacheOperator.m_token != "(")
                     {
                         HandleStackTopOperator();
+                        cacheOperator = m_operatorStack.Peek();
                     }
 
                     m_operatorStack.Pop();
